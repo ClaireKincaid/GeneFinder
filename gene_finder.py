@@ -2,8 +2,6 @@
 # MINI PROJECT 1: GENE FINDER
 #@author: Claire Kincaid
 
-from load import load_seq
-dna = load_seq('./data/X73525.fa')
 
 import random
 from amino_acids import aa, codons, aa_table   #you may find these useful
@@ -20,6 +18,7 @@ def shuffle_string(s):
 
 
 def get_complement(nucleotide):
+
     """Returns the complementary nucleotide
 
         nucleotide: a nucleotide (A, C, G, or T) represented as a string
@@ -33,6 +32,9 @@ def get_complement(nucleotide):
     >>> get_complement('T') #extra doctest, just to cover all bases
     'A'
     """
+
+    complement = ""    
+
     if nucleotide == 'A':
         complement == 'T'
     elif nucleotide == 'C':
@@ -41,6 +43,7 @@ def get_complement(nucleotide):
         complement == 'A'
     elif nucleotide == 'G':
         complement == 'C'
+    
     return complement
 
     
@@ -62,13 +65,11 @@ def get_reverse_complement(dna):
     """
     i = 0
     Reversedna = ''
-    while i<= range(len(dna)):
+    while i <= (len(dna) - 1):
         Reversedna += get_complement(dna[i])
         i = i + 1
     Reversedna = dna[::-1]
     return Reversedna
-
-    
 
 
 def rest_of_ORF(dna):
@@ -87,13 +88,14 @@ def rest_of_ORF(dna):
     for i in range(len(dna)/3):
         if dna[i*3:i*3+3] == 'TGA':
             ORF = dna[:i*3]
+            return ORF
         elif dna[i*3:i*3+3] == 'TAG':
             ORF = dna[:i*3]
+            return ORF
         elif dna[i*3:i*3+3] =='TAA':
             ORF = dna[:i*3]
-        else:
-            ORF = dna
-    return ORF
+            return ORF
+    return dna
     
 
 
@@ -119,10 +121,9 @@ def find_all_ORFs_oneframe(dna):
         if dna[i*3:i*3+3] == 'ATG':
             newORF = rest_of_ORF(dna[i*3:])
             allORf.append(newORF)
-        else:
-            i = i+1
             i += len(newORF)/3
-
+        else:
+            i += 1
     return allORf
     
 
@@ -145,7 +146,7 @@ def find_all_ORFs(dna):
     i = 0
     while 0 <= i <= 2:
         ORF = find_all_ORFs_oneframe(dna[i:])
-        allORF.append(ORF)
+        allORF.extend(ORF)
         i = i + 1
     return allORF
     
@@ -164,12 +165,12 @@ def find_all_ORFs_both_strands(dna):
     allORF = []
     allORF_reverse = []
     i = 0
-    while 0 <= i <= 2:
+    while i <= 2:
         ORF = find_all_ORFs_oneframe(dna[i:])
-        allORF.append(ORF)
+        allORF.extend(ORF)
         reversedna = get_reverse_complement(dna)
         reverseORF = find_all_ORFs_oneframe(reversedna[i:])
-        allORF_reverse.append(reverseORF)
+        allORF_reverse.extend(reverseORF)
         i = i + 1
     both_strands_ORF = allORF + allORF_reverse
     return both_strands_ORF
@@ -183,12 +184,11 @@ def longest_ORF(dna):
     'ATGCTACATTCGCAT'
     """
     longest_ORF = ''
-    for ORF in find_all_ORFs_both_strands(dna):
+    orfs = find_all_ORFs_both_strands(dna)
+    for ORF in orfs:
         if len(ORF) > len(longest_ORF):
             longest_ORF = ORF
     return longest_ORF
-
-    # TODO: implement this
     
 
 
@@ -206,11 +206,10 @@ def longest_ORF_noncoding(dna, num_trials):
     """
     longest_ORFs = []
     for i in range(num_trials):
-        shuffle_string(dna)
-        longest_ORF(dna)
-        longest_ORFs.append(longest_ORF)
+        dna = shuffle_string(dna)
+        longest_ORFs.append(longest_ORF(dna))
     longest_ORF_noncoding = max(longest_ORFs, key=len)
-    return longest_ORF_noncoding
+    return len(longest_ORF_noncoding)
 
     
 
@@ -233,7 +232,8 @@ def coding_strand_to_AA(dna):
     #list comprehensions are the shit
     codons = [dna[i:i+3] for i in range(0, len(dna), 3)] 
     aa_coding = ''.join([aa_table[codon] for codon in codons if len(codon)==3])
-    return aa_coding # I could have made this a list comprehension but I wanted the variable name to make nesting easier
+    return aa_coding 
+    #I could have made this a list comprehension but I wanted the variable name to make nesting easier
     
 
 
@@ -245,17 +245,18 @@ def gene_finder(dna):
     >>> gene_finder('TAG')
     None
     """
-    threshold = longest_ORF_noncoding(dna, 1500)
-    find_all_ORFs_both_strands(longest_ORF(dna))
-    coding_strand = ''.join([coding_strand_to_AA[orf] for orf in both_strands_ORF if len(orf) >= threshold])
+    threshold = longest_ORF_noncoding(dna, 15)
+    print 'hello'
+    print threshold
+    both_strands_ORF = find_all_ORFs_both_strands(dna)
+    coding_strand = [coding_strand_to_AA(orf) for orf in both_strands_ORF if len(orf) >= threshold]
     return coding_strand
-
-
-
-
-    # TODO: implement this
     
-#list comprehension, 3 = optional argument, step size for indices
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+# if __name__ == "__main__":
+#     import doctest
+#     doctest.testmod()
+    
+from load import load_seq
+dna = load_seq('./data/X73525.fa')
+
+print gene_finder(dna)
